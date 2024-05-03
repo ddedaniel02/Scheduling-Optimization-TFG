@@ -1,0 +1,10 @@
+OBJETIVOS:
+1. Minimizar las horas de espera entre las fases de la visita
+2. Minimizar las horas de trabajo máximo de un trabajador con respecto a un paciente en total
+
+RESTRICCIONES:
+1. Una consulta no puede ser ocupada por dos pacientes
+2. Un trabajador no puede estar en dos citas al mismo tiempo
+3. Las fases dentro de una visita se deben hacer en orden
+4. Las visitas se deben hacer justo n días después de la asignación de la primera
+5. No asignar más trabajadores de los disponibles en una misma hora

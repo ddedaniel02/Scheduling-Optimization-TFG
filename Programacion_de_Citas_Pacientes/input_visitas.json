@@ -1,0 +1,58 @@
+{
+    "estudios": ["COVID", "GRIPE", "EBOLA", "CANCER DE MAMA"],
+    "n_personas":{
+      "COVID": 1,
+      "GRIPE": 1,
+      "EBOLA" : 1,
+      "CANCER DE MAMA" : 1
+    },
+    "n_consultorios": 8,
+    "horario_atencion": {
+      "visita_enrolamiento": {
+        "lectura_presentacion_icfs": 60,
+        "evaluacion_medica": 30
+      },
+      "visita1_vacunacion": {
+        "evaluacion_medica": 30,
+        "laboratorio": 20,
+        "vacunacion": 30,
+        "obs_post_vacunacion": 30,
+        "cierre_visita": 30
+      },
+      "visita2_vacunacion": {
+        "evaluacion_medica": 30,
+        "laboratorio": 20,
+        "vacunacion": 30,
+        "obs_post_vacunacion": 30,
+        "cierre_visita": 25
+      },
+      "visita_seguimiento": {
+        "evaluacion_medica": 30,
+        "laboratorio": 20,
+        "cierre_visita": 30
+      }
+    },
+    "tiempos_espera": {
+      "visita1_vacunacion": 15,
+      "visita2_vacunacion": 15,
+      "visita_seguimiento": 30
+    },
+    "roles": ["MG", "MO", "EV", "LB", "AC"],
+    "personal": {
+      "MG": 7,
+      "MO": 2,
+      "E": 4,
+      "LB": 5,
+      "AC": 5
+    },
+    "cargos": {
+      "AC": ["lectura_presentacion_icfs", "cierre_visita"],
+      "MG": ["evaluacion_medica"],
+      "EV": ["vacunacion"],
+      "LB": ["laboratorio"],
+      "MO": ["obs_post_vacunacion"]
+    },
+    "n_dias": 90,
+    "hora_inicio": 7,
+    "hora_fin": 22
+}

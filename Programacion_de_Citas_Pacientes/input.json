@@ -1,0 +1,37 @@
+{
+    "estudios": ["COVID", "GRIPE", "EBOLA", "CANCER DE MAMA"],
+    "n_personas":{
+      "COVID": 1,
+      "GRIPE": 1,
+      "EBOLA" : 1,
+      "CANCER DE MAMA" : 1
+    },
+    "n_consultorios": 8,
+    "fases": ["RC", "CS", "ME", "CM", "LB", "VC", "OB", "PC"],
+    "roles": ["MG", "MS", "E", "LB"],
+    "personal": {
+      "MG": 7,
+      "MS": 3,
+      "E": 7,
+      "LB": 3
+    },
+    "cargos": {
+      "MG": ["ME", "CM", "PC"],
+      "MS": ["VC"],
+      "E": ["RC", "CS", "OB"],
+      "LB": ["LB"]
+    },
+    "duracion": {
+      "RC": 1,
+      "CS": 1,
+      "ME": 1,
+      "CM": 1,
+      "LB": 1,
+      "VC": 1,
+      "OB": 1,
+      "PC": 1
+    },
+    "n_dias": 30,
+    "hora_inicio": 7,
+    "hora_fin": 22
+}

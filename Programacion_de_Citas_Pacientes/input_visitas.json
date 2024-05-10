@@ -1,10 +1,8 @@
 {
-    "estudios": ["COVID", "GRIPE", "EBOLA", "CANCER DE MAMA"],
+    "estudios": ["COVID, GRIPE"],
     "n_personas":{
       "COVID": 1,
-      "GRIPE": 1,
-      "EBOLA" : 1,
-      "CANCER DE MAMA" : 1
+      "GRIPE": 1
     },
     "n_consultorios": 8,
     "horario_atencion": {
@@ -24,7 +22,7 @@
         "laboratorio": 20,
         "vacunacion": 30,
         "obs_post_vacunacion": 30,
-        "cierre_visita": 25
+        "cierre_visita": 30
       },
       "visita_seguimiento": {
         "evaluacion_medica": 30,
@@ -41,7 +39,7 @@
     "personal": {
       "MG": 7,
       "MO": 2,
-      "E": 4,
+      "EV": 4,
       "LB": 5,
       "AC": 5
     },
@@ -52,7 +50,7 @@
       "LB": ["laboratorio"],
       "MO": ["obs_post_vacunacion"]
     },
-    "n_dias": 90,
+    "n_dias": 180,
     "hora_inicio": 7,
     "hora_fin": 22
 }

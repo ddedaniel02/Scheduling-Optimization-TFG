@@ -1,36 +1,71 @@
 {
-    "estudios": ["COVID, GRIPE"],
     "n_personas":{
       "COVID": 1,
       "GRIPE": 1
     },
     "n_consultorios": 8,
-    "horario_atencion": {
+
+    "COVID": {
       "visita_enrolamiento": {
         "lectura_presentacion_icfs": 60,
-        "evaluacion_medica": 30
+        "evaluacion_medica": 30,
+        "tiempo_espera": 15
       },
       "visita1_vacunacion": {
         "evaluacion_medica": 30,
         "laboratorio": 20,
         "vacunacion": 30,
         "obs_post_vacunacion": 30,
-        "cierre_visita": 30
+        "cierre_visita": 30,
+        "tiempo_espera": 15
       },
       "visita2_vacunacion": {
         "evaluacion_medica": 30,
         "laboratorio": 20,
         "vacunacion": 30,
         "obs_post_vacunacion": 30,
-        "cierre_visita": 30
+        "cierre_visita": 30,
+        "tiempo_espera": 30
+
       },
       "visita_seguimiento": {
         "evaluacion_medica": 30,
         "laboratorio": 20,
-        "cierre_visita": 30
+        "cierre_visita": 30,
+        "tiempo_espera": 0
+
       }
     },
-    "tiempos_espera": {
+  "GRIPE": {
+      "visita_enrolamiento": {
+        "lectura_presentacion_icfs": 60,
+        "evaluacion_medica": 30,
+        "tiempo_espera": 15
+      },
+      "visita1_vacunacion": {
+        "evaluacion_medica": 30,
+        "laboratorio": 20,
+        "vacunacion": 30,
+        "obs_post_vacunacion": 30,
+        "cierre_visita": 30,
+        "tiempo_espera": 15
+      },
+      "visita2_vacunacion": {
+        "evaluacion_medica": 30,
+        "laboratorio": 20,
+        "vacunacion": 30,
+        "obs_post_vacunacion": 30,
+        "cierre_visita": 30,
+        "tiempo_espera": 30
+      },
+      "visita_seguimiento": {
+        "evaluacion_medica": 30,
+        "laboratorio": 20,
+        "cierre_visita": 30,
+        "tiempo_espera": 0
+      }
+  },
+    "covid": {
       "visita1_vacunacion": 15,
       "visita2_vacunacion": 15,
       "visita_seguimiento": 30

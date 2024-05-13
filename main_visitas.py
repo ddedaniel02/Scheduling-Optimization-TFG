@@ -17,7 +17,7 @@ import random
 
 lista_sols = []
 lista_objs = []
-
+enrolamiento = True
 with open("Programacion_de_Citas_Pacientes/input_visitas.json", "r") as file:
     myinput = json.load(file)
 
@@ -26,15 +26,18 @@ identificador_pacientes = 1
 # print(pacientes_dict)
 for estudio in pacientes_dict:
     for n_pacientes in range(pacientes_dict[estudio]):
-        conteo_dias = 0
+        tiempo_espera = 0
+        for visita in myinput[estudio]:
+            tiempo_espera += visita["tiempo_espera"]
         citas_paciente = []
         objetivos_paciente = []
         f_objetivo1 = 0
         f_objetivo2 = 0
         print("Paciente: ", identificador_pacientes)
-        for visita in myinput["horario_atencion"]:
+        for visita in myinput[estudio]:
             print(visita)
-            problem = MultiObjectiveMixedVariableProblem(estudio, visita, identificador_pacientes, myinput, conteo_dias)
+            print("Tiempo total: ", tiempo_espera)
+            problem = MultiObjectiveMixedVariableProblem(estudio, visita, identificador_pacientes, myinput, enrolamiento)
             algorithm = NSGA2(pop_size=100,
                               sampling=MixedVariableSampling(),
                               mating=MixedVariableMating(eliminate_duplicates=MixedVariableDuplicateElimination()),
@@ -49,6 +52,9 @@ for estudio in pacientes_dict:
                            termination,
                            seed=random.randint(1, 10000),
                            verbose=True)
+            if enrolamiento:
+                enrolamiento = False
+            #tiempo_espera -= myinput[estudio][visita]["tiempo_espera"]
             X = res.X
             F = res.F
 

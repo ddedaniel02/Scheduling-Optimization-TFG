@@ -16,6 +16,7 @@ import json
 
 lista_sols = []
 lista_objs = []
+tiempo_espera = 0
 
 with open("Programacion_de_Citas_Pacientes/input.json", "r") as file:
     myinput = json.load(file)

@@ -9,7 +9,7 @@
       "visita_enrolamiento": {
         "lectura_presentacion_icfs": 60,
         "evaluacion_medica": 30,
-        "tiempo_espera": 15
+        "tiempo_espera": 0
       },
       "visita1_vacunacion": {
         "evaluacion_medica": 30,
@@ -17,7 +17,7 @@
         "vacunacion": 30,
         "obs_post_vacunacion": 30,
         "cierre_visita": 30,
-        "tiempo_espera": 15
+        "tiempo_espera": 5
       },
       "visita2_vacunacion": {
         "evaluacion_medica": 30,
@@ -25,22 +25,26 @@
         "vacunacion": 30,
         "obs_post_vacunacion": 30,
         "cierre_visita": 30,
-        "tiempo_espera": 30
+        "tiempo_espera": 2
 
       },
       "visita_seguimiento": {
         "evaluacion_medica": 30,
         "laboratorio": 20,
         "cierre_visita": 30,
-        "tiempo_espera": 0
-
+        "tiempo_espera": 3
+      },
+      "visita_cierre": {
+        "obs_post_vacunacion": 30,
+        "cierre_visita": 30,
+        "tiempo_espera": 1
       }
     },
   "GRIPE": {
       "visita_enrolamiento": {
         "lectura_presentacion_icfs": 60,
         "evaluacion_medica": 30,
-        "tiempo_espera": 15
+        "tiempo_espera": 0
       },
       "visita1_vacunacion": {
         "evaluacion_medica": 30,
@@ -48,7 +52,7 @@
         "vacunacion": 30,
         "obs_post_vacunacion": 30,
         "cierre_visita": 30,
-        "tiempo_espera": 15
+        "tiempo_espera": 3
       },
       "visita2_vacunacion": {
         "evaluacion_medica": 30,
@@ -56,20 +60,9 @@
         "vacunacion": 30,
         "obs_post_vacunacion": 30,
         "cierre_visita": 30,
-        "tiempo_espera": 30
-      },
-      "visita_seguimiento": {
-        "evaluacion_medica": 30,
-        "laboratorio": 20,
-        "cierre_visita": 30,
-        "tiempo_espera": 0
+        "tiempo_espera": 2
       }
   },
-    "covid": {
-      "visita1_vacunacion": 15,
-      "visita2_vacunacion": 15,
-      "visita_seguimiento": 30
-    },
     "roles": ["MG", "MO", "EV", "LB", "AC"],
     "personal": {
       "MG": 7,
@@ -85,7 +78,7 @@
       "LB": ["laboratorio"],
       "MO": ["obs_post_vacunacion"]
     },
-    "n_dias": 180,
+    "n_dias": 30,
     "hora_inicio": 7,
     "hora_fin": 22
 }

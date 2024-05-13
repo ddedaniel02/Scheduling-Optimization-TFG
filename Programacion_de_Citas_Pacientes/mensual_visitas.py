@@ -1,36 +1,32 @@
 from pymoo.core.problem import ElementwiseProblem
 from pymoo.core.variable import Choice
 from objetos_variables_visitas import Cita, Fase, Personal
-from main_visitas import tiempo_espera
 import numpy as np
 import random
 
 slots_ocupados = []
 lista_contador = [0, 0, 0, 0]
-dia_actual = 1
 
 
 
 class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
 
-    def __init__(self, estudio, visita, identificador_paciente, myinput, enrolamiento,  **kwargs):
+    def __init__(self, estudio, visita, identificador_paciente, myinput, enrolamiento, tiempo_espera, lista_dias,  **kwargs):
         """Implementación de los parámetros"""
         self.estudio = estudio
         self.visita = visita
         self.identificador_paciente = identificador_paciente
         self.enrolamiento = enrolamiento
+        self.tiempo_espera = tiempo_espera
 
         # Número de consultas disponibles
         self.consultorios = myinput["n_consultorios"]
         self.fases = []
         self.duracion = []
-        self.tiempo_espera = []
         for keys in myinput[self.estudio][self.visita]:
             if keys != "tiempo_espera":
                 self.fases.append(keys)
                 self.duracion.append(myinput[self.estudio][self.visita][keys])
-            else:
-                self.tiempo_espera.append(myinput[self.estudio][self.visita][keys])
         self.roles = myinput["roles"]
         self.recursos = myinput["personal"]
 
@@ -70,19 +66,12 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
         vars = dict()
         # Se crean todas las combinaciones posibles de asignar una Fase a una cita
         self.combinations = []
-        # waiting_day = self.check_day(visita, myinput)
-        # if waiting_day == 0:
-        #     print("Visita inicial")
-        #     print("Waiting day: ", waiting_day)
-        #     self.create_combinations(myinput)
-        # else:
-        #     print("Visitas venideras")
-        #     print("Waiting day: ", waiting_day)
-        #     self.create_next_visit(waiting_day, conteo_dias)
+
         if self.enrolamiento:
-            self.create_combinations(myinput)
+            self.create_combinations()
         else:
-            pass
+            self.dia_actual = lista_dias[len(lista_dias)-1] + myinput[estudio][visita]["tiempo_espera"]
+            self.create_combinations_next_visits(self.dia_actual)
         #print(self.combinations)
         # Se filtran aquellas variables que sabemos de antemano que no serán válidas
         for actividad in self.actividades:
@@ -106,18 +95,23 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
 
         # Restriccion 1: Las fases deben estar asignadas al mismo día:
         if self.enrolamiento:
+            dia_primero = 1
             primero = True
             for citas in X.values():
+                dia_actual = citas.day
                 if primero:
-                    dia_actual = citas.day
-                    if dia_actual + tiempo_espera > self.dias:
-                        penalizacion_1 += 1000
+                    self.dia_actual = dia_primero
+                    dia_primero = dia_actual
                     primero = False
-                elif citas.day != dia_actual:
-                    penalizacion_2 += 1000
+                else:
+                    if dia_actual != dia_primero:
+                        penalizacion_1 += 100
+            # Restriccion 2: El dia inicial no puede superar sumando el tiempo de espera, los dias totales
+            if dia_primero + self.tiempo_espera > self.dias:
+                penalizacion_2 += 1000
 
 
-        # Restriccion 2: Una sala no puede contener dos citas al mismo tiempo:
+        # Restriccion 3: Una sala no puede contener dos citas al mismo tiempo:
         for sala in range(1, self.consultorios +1):
             citas_sala_time = np.sort(
                 np.array(
@@ -128,7 +122,7 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
                     penalizacion_3 += 100
                 start_time = cita_time
 
-        # Restriccion 2: No se pueden asignar más personal del disponible en una misma hora
+        # Restriccion 4: No se pueden asignar más personal del disponible en una misma hora
         for start_time in self.horas:
             # Lista que contiene todas las citas de un respectivo día y de una hora
             lista_time_day = [cita for cita in X.values() if cita.start_time == start_time]
@@ -137,15 +131,15 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
                 lista_contador.append(0)
             #Funcion que cuenta cuantos roles hay asignado a dichar hora
             penalizacion_4 += self.contador_personal(lista_contador, lista_time_day)
-            penalizacion_4 += self.contador_personal_asignado(dia_actual, start_time, lista_contador)
+            penalizacion_4 += self.contador_personal_asignado(self.dia_actual, start_time, lista_contador)
 
-            # Restriccion 3: Un mismo trabajador no puede estar en dos citas distintas a la misma hora
+            # Restriccion 5: Un mismo trabajador no puede estar en dos citas distintas a la misma hora
             for personal in lista_time_day:
                 citas = [cita for cita in X.values() if cita.personal.id == personal.personal.id and cita.start_time == start_time]
                 if len(citas) > 1:
                     penalizacion_5 += 100
 
-        # Restriccion 4: Una fase anterior en el orden no puede ir después ni a la misma hora que otra que va más
+        # Restriccion 6: Una fase anterior en el orden no puede ir después ni a la misma hora que otra que va más
         # tarde en el orden. Por ejemplo: 1ºPC y 2ºR (incorrecto)
         evaluados = set()
         for cita_i in X:
@@ -179,11 +173,7 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
                     break
 
         # Funcion objetivo 2: Minimizar las horas de trabajo del grupo de trabajadores
-        list_consultorios = []
-        for cita in X.values():
-            if cita.operation_room not in list_consultorios:
-                list_consultorios.append(cita.operation_room)
-        funcion_objetivo_2 = len(list_consultorios)
+        funcion_objetivo_2 = self.dia_actual
 
 
         out["F"] = [funcion_objetivo_1, funcion_objetivo_2]
@@ -216,44 +206,38 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
                 return True
         return False
 
-    def conteo_trabajadores(self, lista_citas, dia, identificador):
-        for cita in slots_ocupados:
-            if cita.day == dia and cita.personal.id == identificador:
-                lista_citas.append(cita)
-
-    def repartir_carga(self, lista_citas):
-        funcion_objetivo_2 = 0
-        total_citas = sum(lista_citas)
-        total_trabajadores = len(lista_citas)
-        if total_citas % total_trabajadores != 0:
-            if max(lista_citas) != (int(total_citas / total_trabajadores)) + 1:
-                funcion_objetivo_2 += 100
-        else:
-            if max(lista_citas) != (int(total_citas / total_trabajadores)):
-                funcion_objetivo_2 += 100
-        return funcion_objetivo_2
-
-    def check_day(self, myinput):
-        waiting_days = 0
-        if myinput["tiempos_espera"].get(self.visita) != None:
-            waiting_days = myinput["tiempos_espera"].get(self.visita)
-        return waiting_days
-
-    def create_combinations(self, myinput):
+    def create_combinations(self):
         for consultorio in range(1, self.consultorios + 1):
-            for dia in self.dias:
+            for dia in range(1, self.dias + 1):
                 for personal in self.personal:
                     for start_time in self.horas:
                         for end_time in self.horas:
-                            if self.comprobar_horas(end_time, start_time):
-                                if personal.turno == "Mañana" and start_time < 15:
-                                    cita = Cita(consultorio, start_time, end_time, dia, personal)
-                                    if not self.check_slot(cita):
-                                        self.combinations.append(cita)
-                                elif personal.turno == "Tarde" and start_time >= 15:
-                                    cita = Cita(consultorio, start_time, end_time, dia, personal)
-                                    if not self.check_slot(cita):
-                                        self.combinations.append(cita)
+                            if end_time > start_time:
+                                if (end_time <= 14 and (start_time <= 14.0)) or (end_time >= 15 and (15 <= start_time)):
+                                    if self.comprobar_horas(end_time, start_time):
+                                        if personal.turno == "Mañana" and start_time < 15:
+                                            cita = Cita(consultorio, start_time, end_time, dia, personal)
+                                            if not self.check_slot(cita):
+                                                self.combinations.append(cita)
+                                        elif personal.turno == "Tarde" and start_time >= 15:
+                                            cita = Cita(consultorio, start_time, end_time, dia, personal)
+                                            if not self.check_slot(cita):
+                                                self.combinations.append(cita)
+
+    def create_combinations_next_visits(self, dia):
+        for consultorio in range(1, self.consultorios + 1):
+            for personal in self.personal:
+                for start_time in self.horas:
+                    for end_time in self.horas:
+                        if self.comprobar_horas(end_time, start_time):
+                            if personal.turno == "Mañana" and start_time < 15:
+                                cita = Cita(consultorio, start_time, end_time, dia, personal)
+                                if not self.check_slot(cita):
+                                    self.combinations.append(cita)
+                            elif personal.turno == "Tarde" and start_time >= 15:
+                                cita = Cita(consultorio, start_time, end_time, dia, personal)
+                                if not self.check_slot(cita):
+                                    self.combinations.append(cita)
 
     def comprobar_horas(self, end_time, start_time):
         resultado = round(end_time - start_time, 2)

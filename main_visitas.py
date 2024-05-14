@@ -2,7 +2,7 @@ from pymoo.operators.mutation.pm import PolynomialMutation
 from pymoo.optimize import minimize
 from pymoo.algorithms.moo.nsga2 import NSGA2
 from pymoo.core.mixed import MixedVariableMating, MixedVariableSampling, MixedVariableDuplicateElimination
-from mensual_visitas import MultiObjectiveMixedVariableProblem, slots_ocupados
+from mensual_visitas import MultiObjectiveMixedVariableProblem, slots_ocupados, horarios_dias
 import matplotlib.pyplot as plt
 import numpy as np
 from representacion_sols_visitas import plot_schedule
@@ -19,6 +19,10 @@ lista_sols = []
 with open("Programacion_de_Citas_Pacientes/input_visitas.json", "r") as file:
     myinput = json.load(file)
 
+for dias in range(myinput["n_dias"]):
+    horarios_dias.append(set())
+
+
 pacientes_dict = myinput["n_personas"]
 identificador_pacientes = 1
 # print(pacientes_dict)
@@ -34,6 +38,7 @@ with open('Txt/objetivos.txt', 'w') as f:
             objetivos_paciente = [0, 0]
             lista_dias = []
             enrolamiento = True
+            consultas_usadas = []
             print("Paciente: ", identificador_pacientes)
             for visita in myinput[estudio]:
                 print(visita)
@@ -102,7 +107,7 @@ with open('Txt/objetivos.txt', 'w') as f:
                 # plt.title("Frente de Pareto (Normalizado)")
                 # plt.show()
 
-                weights = np.array([0.6, 0.4])
+                weights = np.array([0.3, 0.3, 0.3, 0.1])
 
                 from pymoo.decomposition.asf import ASF
 
@@ -120,14 +125,26 @@ with open('Txt/objetivos.txt', 'w') as f:
                 citas_paciente.append(X[i])
                 objetivos_paciente[0] += F[i][0]
                 objetivos_paciente[1] = F[i][1]
+                consultas_usadas.append(F[i][2])
                 insert_uno = True
                 for citas in X[i].values():
                     if insert_uno:
+                        dia = citas.day
                         lista_dias.append(citas.day)
                         insert_uno = False
+                    problem.insertar_horas(citas.start_time, citas.end_time, horarios_dias[dia - 1])
+                    print(horarios_dias[dia-1])
                     slots_ocupados.append(citas)
                 print("Slots ocupados: ",slots_ocupados)
-
+            print("Consultas utilizadas: ", consultas_usadas)
             plot_schedule(citas_paciente, estudio, identificador_pacientes)
             identificador_pacientes += 1
             f.write(str(objetivos_paciente) + '\n')
+
+contador = 1
+for dia in horarios_dias:
+    if len(dia) != 0:
+        print(contador)
+        print(dia)
+        print(len(dia))
+    contador += 1

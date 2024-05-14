@@ -7,6 +7,8 @@ import random
 slots_ocupados = []
 lista_contador = [0, 0, 0, 0]
 
+horarios_dias = []
+
 
 
 class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
@@ -81,11 +83,12 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
                     if actividad.fase in self.cargo_actividad[opcion.personal.role]:
                         opciones.append(opcion)
             vars[actividad] = Choice(options=opciones)
-        super().__init__(vars=vars, n_obj=2, n_constr=6, **kwargs)
+        super().__init__(vars=vars, n_obj=4, n_constr=6, **kwargs)
 
 
     def _evaluate(self, X, out, *args, **kwargs):
         # X = Fase:Cita
+        horario_local = set()
         penalizacion_1 = 0
         penalizacion_2 = 0
         penalizacion_3 = 0
@@ -146,12 +149,13 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
             if cita_i.fase in evaluados:
                 continue
             evaluados.add(cita_i)
-            hora_inicio_i = X[cita_i].start_time
+            hora_fin_i = X[cita_i].end_time
             for cita_j in X:
                 if cita_j in evaluados:
                     continue
                 hora_inicio_j = X[cita_j].start_time
-                if self.fases.index(cita_i.fase) == self.fases.index(cita_j.fase) - 1 and hora_inicio_i >= hora_inicio_j:
+                if self.fases.index(cita_i.fase) == self.fases.index(cita_j.fase) - 1 and \
+                    hora_inicio_j < hora_fin_i:
                     penalizacion_6 += 100
 
 
@@ -175,9 +179,42 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
         # Funcion objetivo 2: Minimizar las horas de trabajo del grupo de trabajadores
         funcion_objetivo_2 = self.dia_actual
 
+        # Funcion Objetivo 3: Minimizar slots ocupados (paralelizar las citas)
+        funcion_objetivo_3 = 0
+        for citas in X.values():
+            self.insertar_horas(citas.start_time, citas.end_time, horario_local)
+        for slot in horario_local:
+            if slot not in horarios_dias[self.dia_actual - 1]:
+                funcion_objetivo_3 += 1
+        funcion_objetivo_3 += len(horarios_dias[self.dia_actual - 1])
 
-        out["F"] = [funcion_objetivo_1, funcion_objetivo_2]
+        # Funcion Objetivo 4: Minimizar las consultas vacias:
+        consultas_usadas = [consulta for consulta in range(1, self.consultorios + 1)]
+        for citas in X.values():
+            if citas.operation_room in consultas_usadas:
+                consultas_usadas.remove(citas.operation_room)
+        funcion_objetivo_4 = len(consultas_usadas)
+
+        out["F"] = [funcion_objetivo_1, funcion_objetivo_2, funcion_objetivo_3, funcion_objetivo_4]
         out["G"] = [penalizacion_1, penalizacion_2, penalizacion_3, penalizacion_4, penalizacion_5, penalizacion_6]
+
+
+    def insertar_horas(self, hora_inicio, hora_fin, horario_local):
+        hora_insertar = hora_inicio
+        acumulacion = 0
+        inicio = True
+
+        while hora_insertar < hora_fin:
+            hora_insertar = round(hora_insertar + acumulacion, 2)
+            hora_entera = int(hora_insertar)
+            parte_float = round(hora_insertar - hora_entera, 2)
+
+            if parte_float == 0.6:
+                hora_insertar = int(hora_insertar) + 1
+            horario_local.add(hora_insertar)
+            if inicio:
+                acumulacion += 0.10
+                inicio = False
 
     def contador_personal(self, lista_contador, lista_time_day):
         penalizacion_2 = 0
@@ -242,20 +279,18 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
     def comprobar_horas(self, end_time, start_time):
         resultado = round(end_time - start_time, 2)
         for duracion in self.duracion:
-            if duracion == 60:
-                duracion = 1
-            else:
-                duracion = duracion * 0.01
+            mod = (duracion % 60) * 0.01
+            div = int(duracion / 60)
+            duracion = div + mod
             if resultado == duracion:
                 return True
         return False
 
     def asignar_hora(self, opcion, actividad, myinput):
         duracion = myinput[self.estudio][self.visita][actividad.fase]
-        if duracion == 60:
-            duracion = 1
-        else:
-            duracion = duracion * 0.01
+        mod = (duracion % 60) * 0.01
+        div = int(duracion / 60)
+        duracion = div + mod
         resultado = round(opcion.end_time - opcion.start_time, 2)
         if resultado == duracion:
             return True

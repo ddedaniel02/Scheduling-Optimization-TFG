@@ -180,23 +180,45 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
         funcion_objetivo_2 = self.dia_actual
 
         # Funcion Objetivo 3: Minimizar slots ocupados (paralelizar las citas)
+        # Funcion Objetivo 4: Minimizar las consultas vacias:
         funcion_objetivo_3 = 0
         for citas in X.values():
             self.insertar_horas(citas.start_time, citas.end_time, horario_local)
+
+
         for slot in horario_local:
             if slot not in horarios_dias[self.dia_actual - 1]:
                 funcion_objetivo_3 += 1
-        funcion_objetivo_3 += len(horarios_dias[self.dia_actual - 1])
 
-        # Funcion Objetivo 4: Minimizar las consultas vacias:
-        consultas_usadas = [consulta for consulta in range(1, self.consultorios + 1)]
-        for citas in X.values():
-            if citas.operation_room in consultas_usadas:
-                consultas_usadas.remove(citas.operation_room)
-        funcion_objetivo_4 = len(consultas_usadas)
+        funcion_objetivo_3 += len(horarios_dias[self.dia_actual - 1])
+        funcion_objetivo_4 = self.consultas_ocupadas(X)
+
 
         out["F"] = [funcion_objetivo_1, funcion_objetivo_2, funcion_objetivo_3, funcion_objetivo_4]
         out["G"] = [penalizacion_1, penalizacion_2, penalizacion_3, penalizacion_4, penalizacion_5, penalizacion_6]
+
+    def consultas_ocupadas(self, citas):
+        contador_citas = len(citas)
+        citas_consulta = []
+
+        for consulta in range(0, self.consultorios):
+            citas_consulta.append(0)
+            for cita in citas.values():
+                if cita.operation_room == consulta + 1:
+                    citas_consulta[consulta] += 1
+            for citas_pasadas in slots_ocupados:
+                if citas_pasadas.day == self.dia_actual:
+                    contador_citas += 1
+                    if citas_pasadas.operation_room == consulta + 1:
+                        citas_consulta[consulta] += 1
+        average = contador_citas / len(citas_consulta)
+        maximum_weight = max(citas_consulta)
+        minimum_weight = min(citas_consulta)
+
+        difference = max(maximum_weight - average, average - minimum_weight)
+        return difference
+
+
 
 
     def insertar_horas(self, hora_inicio, hora_fin, horario_local):

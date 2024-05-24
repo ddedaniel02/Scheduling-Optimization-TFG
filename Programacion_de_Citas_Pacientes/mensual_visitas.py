@@ -212,6 +212,9 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
                     if citas_pasadas.operation_room == consulta + 1:
                         citas_consulta[consulta] += 1
         average = contador_citas / len(citas_consulta)
+        modulo = contador_citas % len(citas_consulta)
+        if modulo != 0:
+            average = int(average) + 1
         maximum_weight = max(citas_consulta)
         minimum_weight = min(citas_consulta)
 

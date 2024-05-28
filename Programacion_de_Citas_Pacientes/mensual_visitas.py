@@ -173,7 +173,7 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
                     continue
                 if self.fases.index(cita_i.fase) == self.fases.index(cita_j.fase) - 1:
                     hora_inicio_j = X[cita_j].start_time
-                    funcion_objetivo_1 += self.restar_horas(hora_inicio_j, hora_fin_i)
+                    funcion_objetivo_1 += self.restar_horas(hora_inicio_j, hora_fin_i, False)
                     break
 
         # Funcion objetivo 2: Minimizar las horas de trabajo del grupo de trabajadores
@@ -198,7 +198,7 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
         out["G"] = [penalizacion_1, penalizacion_2, penalizacion_3, penalizacion_4, penalizacion_5, penalizacion_6]
 
     def consultas_ocupadas(self, citas):
-        contador_citas = len(citas)
+        contador_citas = 0
         citas_consulta = []
 
         for consulta in range(0, self.consultorios):
@@ -208,15 +208,16 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
                     citas_consulta[consulta] += 1
             for citas_pasadas in slots_ocupados:
                 if citas_pasadas.day == self.dia_actual:
-                    contador_citas += 1
                     if citas_pasadas.operation_room == consulta + 1:
                         citas_consulta[consulta] += 1
+        contador_citas += sum(citas_consulta)
         average = contador_citas / len(citas_consulta)
         modulo = contador_citas % len(citas_consulta)
         if modulo != 0:
             average = int(average) + 1
         maximum_weight = max(citas_consulta)
         minimum_weight = min(citas_consulta)
+
 
         difference = max(maximum_weight - average, average - minimum_weight)
         return difference
@@ -225,21 +226,16 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
 
 
     def insertar_horas(self, hora_inicio, hora_fin, horario_local):
-        hora_insertar = hora_inicio
-        acumulacion = 0
-        inicio = True
 
-        while hora_insertar < hora_fin:
-            hora_insertar = round(hora_insertar + acumulacion, 2)
-            hora_entera = int(hora_insertar)
-            parte_float = round(hora_insertar - hora_entera, 2)
+        while hora_inicio < hora_fin:
+            horario_local.add(hora_inicio)
+            hora_inicio = round(hora_inicio + 0.1, 2)
+            hora_entera = int(hora_inicio)
+            parte_float = round(hora_inicio - hora_entera, 2)
 
             if parte_float == 0.6:
-                hora_insertar = int(hora_insertar) + 1
-            horario_local.add(hora_insertar)
-            if inicio:
-                acumulacion += 0.10
-                inicio = False
+                hora_inicio = int(hora_inicio) + 1
+        horario_local.add(hora_inicio)
 
     def contador_personal(self, lista_contador, lista_time_day):
         penalizacion_2 = 0
@@ -275,7 +271,7 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
                     for start_time in self.horas:
                         for end_time in self.horas:
                             if end_time > start_time:
-                                if (end_time <= 14 and (start_time <= 14.0)) or (end_time >= 15 and (15 <= start_time)):
+                                if (end_time <= 14 and start_time <= 14.0) or (end_time >= 15 and start_time >= 15):
                                     if self.comprobar_horas(end_time, start_time):
                                         if personal.turno == "Mañana" and start_time < 15:
                                             cita = Cita(consultorio, start_time, end_time, dia, personal)
@@ -302,7 +298,7 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
                                     self.combinations.append(cita)
 
     def comprobar_horas(self, end_time, start_time):
-        resultado = round(end_time - start_time, 2)
+        resultado = self.restar_horas(end_time, start_time, True)
         for duracion in self.duracion:
             mod = (duracion % 60) * 0.01
             div = int(duracion / 60)
@@ -316,14 +312,15 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
         mod = (duracion % 60) * 0.01
         div = int(duracion / 60)
         duracion = div + mod
-        resultado = round(opcion.end_time - opcion.start_time, 2)
+        resultado = self.restar_horas(opcion.end_time, opcion.start_time, True)
         if resultado == duracion:
             return True
         return False
 
-    def restar_horas(self, start_time, end_time):
-        if end_time > start_time:
-            return 100
+    def restar_horas(self, start_time, end_time, comb):
+        if not comb:
+            if end_time > start_time:
+                return 100
         parte_entera_start_time = int(start_time)
         parte_entera_end_time = int(end_time)
         parte_decimal_start_time = start_time - parte_entera_start_time
@@ -332,7 +329,7 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
         diferencia_decimal = round(parte_decimal_start_time - parte_decimal_end_time, 2)
         if diferencia_decimal < 0:
             diferencia_entera -= 1
-            diferencia_decimal = diferencia_decimal * (-1)
+            diferencia_decimal = round(0.6 - abs(diferencia_decimal), 2)
         numero = diferencia_entera + diferencia_decimal
         return numero
 

@@ -51,11 +51,11 @@ def plot_schedule(schedule, estudio, paciente):
     plt.tight_layout()
 
     # Crear la carpeta si no existe
-    if not os.path.exists('./imagenes_plots'):
-        os.makedirs('./imagenes_plots')
+    if not os.path.exists('resultados_citas_agenda_paciente'):
+        os.makedirs('resultados_citas_agenda_paciente')
 
     # Guardar la figura en la carpeta deseada
-    plt.savefig(f'./imagenes_plots/{estudio}_{paciente}_plot.png')
+    plt.savefig(f'./resultados_citas_agenda_paciente/agenda_paciente_{paciente}.png')
 
 # Ejemplo de uso:
 # plot_schedule(schedule, "Nombre del Estudio", "Nombre del Paciente")

@@ -1,9 +1,7 @@
 from pymoo.core.problem import ElementwiseProblem
 from pymoo.core.variable import Choice
-from objetos_variables import Cita, Fase, Personal, consistencia_horas
+from codigo_antiguo.objetos_variables import Cita, Fase, Personal
 import numpy as np
-import math
-import json
 
 slots_ocupados = []
 lista_contador = [0, 0, 0, 0]

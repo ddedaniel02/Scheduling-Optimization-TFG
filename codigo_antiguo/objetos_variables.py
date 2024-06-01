@@ -1,3 +1,8 @@
+"""
+Clase objetos
+"""
+
+
 #create a surgery class with the operation room, the start time and the end time
 class Cita():
     def __init__(self, operation_room, start_time, end_time, dia, personal):

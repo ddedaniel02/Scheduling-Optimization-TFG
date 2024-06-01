@@ -115,32 +115,22 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
 
 
         # Restriccion 3: Una sala no puede contener dos citas al mismo tiempo:
-        for sala in range(1, self.consultorios +1):
-            citas_sala_time = np.sort(
-                np.array(
-                    [cita.start_time for cita in X.values() if cita.operation_room == sala]))
-            start_time = 0
-            for cita_time in citas_sala_time:
-                if cita_time == start_time:
-                    penalizacion_3 += 100
-                start_time = cita_time
+        for citas in X.values():
+            horas_ocupadas_consulta = set()
+            for citas_ocupadas in slots_ocupados:
+                if citas_ocupadas.operation_room == citas.operation_room and citas_ocupadas.day == self.dia_actual:
+                    self.insertar_horas(citas_ocupadas.start_time, citas_ocupadas.end_time, horas_ocupadas_consulta)
+            penalizacion_3 += self.contador_citas_consulta(citas.start_time, citas.end_time, horas_ocupadas_consulta)
 
-        # Restriccion 4: No se pueden asignar más personal del disponible en una misma hora
-        for start_time in self.horas:
-            # Lista que contiene todas las citas de un respectivo día y de una hora
-            lista_time_day = [cita for cita in X.values() if cita.start_time == start_time]
-            lista_contador = []
-            for i in range(len(self.roles)):
-                lista_contador.append(0)
-            #Funcion que cuenta cuantos roles hay asignado a dichar hora
-            penalizacion_4 += self.contador_personal(lista_contador, lista_time_day)
-            penalizacion_4 += self.contador_personal_asignado(self.dia_actual, start_time, lista_contador)
+            franja_horas_recurso = set()
+            self.insertar_horas(citas.start_time, citas.end_time, franja_horas_recurso)
+            for hora in franja_horas_recurso:
+                # Restriccion 4: No se pueden asignar más personal del disponible en una misma hora
+                penalizacion_4 += self.contador_recursos_personal(hora, citas.personal.role)
 
-            # Restriccion 5: Un mismo trabajador no puede estar en dos citas distintas a la misma hora
-            for personal in lista_time_day:
-                citas = [cita for cita in X.values() if cita.personal.id == personal.personal.id and cita.start_time == start_time]
-                if len(citas) > 1:
-                    penalizacion_5 += 100
+                # Restriccion 5: Un mismo trabajador no puede estar en dos citas distintas a la misma hora
+                penalizacion_5 += self.contador_trabajador(hora, citas.personal.id)
+
 
         # Restriccion 6: Una fase anterior en el orden no puede ir después ni a la misma hora que otra que va más
         # tarde en el orden. Por ejemplo: 1ºPC y 2ºR (incorrecto)
@@ -173,14 +163,14 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
                     continue
                 if self.fases.index(cita_i.fase) == self.fases.index(cita_j.fase) - 1:
                     hora_inicio_j = X[cita_j].start_time
-                    funcion_objetivo_1 += self.restar_horas(hora_inicio_j, hora_fin_i, False)
+                    diferencia = self.restar_horas(hora_inicio_j, hora_fin_i, False)
+                    funcion_objetivo_1 = self.sumar_horas(funcion_objetivo_1, diferencia)
                     break
 
-        # Funcion objetivo 2: Minimizar las horas de trabajo del grupo de trabajadores
+        # Funcion objetivo 2: Minimizar el día de fin
         funcion_objetivo_2 = self.dia_actual
 
         # Funcion Objetivo 3: Minimizar slots ocupados (paralelizar las citas)
-        # Funcion Objetivo 4: Minimizar las consultas vacias:
         funcion_objetivo_3 = 0
         for citas in X.values():
             self.insertar_horas(citas.start_time, citas.end_time, horario_local)
@@ -191,6 +181,7 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
                 funcion_objetivo_3 += 1
 
         funcion_objetivo_3 += len(horarios_dias[self.dia_actual - 1])
+        # Funcion Objetivo 4: Minimizar las consultas vacias:
         funcion_objetivo_4 = self.consultas_ocupadas(X)
 
 
@@ -237,27 +228,39 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
                 hora_inicio = int(hora_inicio) + 1
         horario_local.add(hora_inicio)
 
-    def contador_personal(self, lista_contador, lista_time_day):
+    def contador_citas_consulta(self, hora_inicio, hora_fin, lista_horas):
+        penalizacion = 0
+        while hora_inicio < hora_fin:
+            if hora_inicio in lista_horas:
+                penalizacion += 100
+            hora_inicio = round(hora_inicio + 0.1, 2)
+            hora_entera = int(hora_inicio)
+            parte_float = round(hora_inicio - hora_entera, 2)
+
+            if parte_float == 0.6:
+                hora_inicio = int(hora_inicio) + 1
+        if hora_inicio in lista_horas:
+            penalizacion += 100
+        return penalizacion
+
+    def contador_recursos_personal(self, hora, rol):
+        contador = 1
         penalizacion_2 = 0
-        for rol in self.roles:
-            for cita in lista_time_day:
-                if cita.personal.role == rol:
-                    if lista_contador[self.roles.index(rol)] < self.recursos[rol]:
-                        lista_contador[self.roles.index(rol)] += 1
-                    else:
-                        penalizacion_2 += 100
+        for cita in slots_ocupados:
+            if cita.day == self.dia_actual and cita.personal.role == rol and (cita.start_time <= hora and hora <= cita.end_time):
+                contador += 1
+                if contador > self.recursos[rol]:
+                    penalizacion_2 += 100
         return penalizacion_2
-    def contador_personal_asignado(self, day, start_time, lista_contador):
-        penalizacion_2 = 0
-        for rol in self.roles:
-            for cita in slots_ocupados:
-                if cita.day == day and cita.start_time == start_time:
-                    if cita.personal.role == rol:
-                        if lista_contador[self.roles.index(rol)] < self.recursos[rol]:
-                            lista_contador[self.roles.index(rol)] += 1
-                        else:
-                            penalizacion_2 += 100
-        return penalizacion_2
+
+    def contador_trabajador(self, hora, id):
+        penalizacion = 3
+        for cita in slots_ocupados:
+            if cita.day == self.dia_actual and cita.personal.id == id and (cita.start_time <= hora and hora <= cita.end_time):
+                penalizacion += 100
+                break
+
+
     def check_slot(self, cita):
         for elements in slots_ocupados:
             if cita.day == elements.day and cita.start_time == elements.start_time and cita.operation_room == elements.operation_room:
@@ -333,4 +336,22 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
         numero = diferencia_entera + diferencia_decimal
         return numero
 
+    def sumar_horas(self, hora1, hora2):
+        # Dividir las horas y los minutos
+        horas1 = int(hora1)
+        horas2 = int(hora2)
+        minutos1 = round(hora1 - horas1, 2)
+        minutos2 = round(hora2 - horas2, 2)
+
+        # Sumar las horas y los minutos
+        suma_horas = horas1 + horas2
+        suma_minutos = round(minutos1 + minutos2, 2)
+
+        # Ajustar la suma de los minutos si excede 60 minutos
+        if suma_minutos >= 0.6:
+            suma_minutos = round(suma_minutos - 0.6, 2)
+            suma_horas += 1
+
+        # Devolver la suma en formato hora.minuto
+        return suma_horas + suma_minutos
 

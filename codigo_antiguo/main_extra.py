@@ -2,11 +2,9 @@ from pymoo.operators.mutation.pm import PolynomialMutation
 from pymoo.optimize import minimize
 from pymoo.algorithms.moo.nsga2 import NSGA2
 from pymoo.core.mixed import MixedVariableMating, MixedVariableSampling, MixedVariableDuplicateElimination
-from mensual_extra import MultiObjectiveMixedVariableProblem, slots_ocupados
-import matplotlib.pyplot as plt
+from codigo_antiguo.mensual_extra import MultiObjectiveMixedVariableProblem, slots_ocupados
 import numpy as np
 from representacion_sols import plot_schedule
-from pymoo.visualization.scatter import Scatter
 from pymoo.termination.robust import RobustTermination
 from pymoo.termination.ftol import MultiObjectiveSpaceTermination
 import json
@@ -18,7 +16,7 @@ lista_sols = []
 lista_objs = []
 tiempo_espera = 0
 
-with open("Programacion_de_Citas_Pacientes/input.json", "r") as file:
+with open("input.json", "r") as file:
     myinput = json.load(file)
 
 pacientes_dict = myinput["n_personas"]
@@ -111,6 +109,6 @@ for estudio in pacientes_dict:
 
         identificador_pacientes += 1
 
-with open('Txt/objetivos.txt', 'w') as f:
+with open('../Txt/objetivos.txt', 'w') as f:
     for elements in lista_objs:
         f.write(str(elements)+'\n')

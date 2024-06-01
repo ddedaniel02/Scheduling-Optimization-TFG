@@ -1,9 +1,9 @@
 {
     "n_personas":{
-      "COVID": 1,
-      "GRIPE": 1
+      "COVID": 5,
+      "GRIPE": 5
     },
-    "n_consultorios": 8,
+    "n_consultorios": 5,
 
     "COVID": {
       "visita_enrolamiento": {
@@ -17,7 +17,7 @@
         "vacunacion": 30,
         "obs_post_vacunacion": 30,
         "cierre_visita": 30,
-        "tiempo_espera": 5
+        "tiempo_espera": 2
       },
       "visita2_vacunacion": {
         "evaluacion_medica": 30,
@@ -25,18 +25,18 @@
         "vacunacion": 30,
         "obs_post_vacunacion": 30,
         "cierre_visita": 30,
-        "tiempo_espera": 2
+        "tiempo_espera": 1
 
       },
       "visita_seguimiento": {
-        "evaluacion_medica": 30,
-        "laboratorio": 20,
+        "evaluacion_medica": 50,
+        "laboratorio": 40,
         "cierre_visita": 30,
-        "tiempo_espera": 3
+        "tiempo_espera": 2
       },
       "visita_cierre": {
-        "obs_post_vacunacion": 30,
-        "cierre_visita": 30,
+        "obs_post_vacunacion": 20,
+        "cierre_visita": 10,
         "tiempo_espera": 1
       }
     },
@@ -63,20 +63,16 @@
         "tiempo_espera": 2
       }
   },
-    "roles": ["MG", "MO", "EV", "LB", "AC"],
+    "roles": ["MG", "LB", "AC"],
     "personal": {
-      "MG": 7,
-      "MO": 2,
-      "EV": 4,
-      "LB": 5,
-      "AC": 5
+      "MG": 5,
+      "LB": 4,
+      "AC": 4
     },
     "cargos": {
       "AC": ["lectura_presentacion_icfs", "cierre_visita"],
-      "MG": ["evaluacion_medica"],
-      "EV": ["vacunacion"],
-      "LB": ["laboratorio"],
-      "MO": ["obs_post_vacunacion"]
+      "MG": ["evaluacion_medica", "obs_post_vacunacion", "vacunacion"],
+      "LB": ["laboratorio"]
     },
     "n_dias": 30,
     "hora_inicio": 7,

@@ -40,7 +40,7 @@ def escribir_resultados_paciente(resultados, identificador_paciente):
         file.write(f"\nHoras de espera total: {resultados[0]}, Dia de fin: {resultados[1]}\n")
 
 
-def escribir_estadisticas_dia(myinput, citas_totales, consulta_usadas, horarios_dias):
+def escribir_estadisticas_dia(myinput, citas_totales, consulta_usadas, trabajadores_usados, horarios_dias):
     slots_totales = 1 #empezamos en 1 para contar también la última
     for horas in range(myinput["hora_inicio"], myinput["hora_fin"]):
         for minutos in range(0, 60, 10):
@@ -60,8 +60,16 @@ def escribir_estadisticas_dia(myinput, citas_totales, consulta_usadas, horarios_
                                f"\tPaciente: {cita_paciente[0].paciente}\n")
 
                 file.write(f"\nCitas en cada consulta: {consulta_usadas[day - 1]}\n"
-                           f"Porcentaje de ocupacion: {porcentaje_ocupacion}\n"
-                           f"Slots Ocupados: {sorted_list}\n")
+                            f"Porcentaje de ocupacion: {porcentaje_ocupacion}\n"
+                            f"Slots Ocupados: {sorted_list}\n")
+                file.write(f"Citas por trabajador: \n")
+                for claves in trabajadores_usados[day - 1]:
+                    value = trabajadores_usados[day - 1][claves]
+                    if value != 0:
+                        file.write(f"{claves}:{str(value)}\n")
+
+
+
 
 def ordenar_citas(citas_totales, day):
     lista_ordenada = []

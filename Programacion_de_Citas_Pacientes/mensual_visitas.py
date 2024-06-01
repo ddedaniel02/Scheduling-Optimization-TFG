@@ -83,7 +83,7 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
                     if actividad.fase in self.cargo_actividad[opcion.personal.role]:
                         opciones.append(opcion)
             vars[actividad] = Choice(options=opciones)
-        super().__init__(vars=vars, n_obj=4, n_constr=6, **kwargs)
+        super().__init__(vars=vars, n_obj=5, n_constr=6, **kwargs)
 
 
     def _evaluate(self, X, out, *args, **kwargs):
@@ -131,6 +131,10 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
                 # Restriccion 5: Un mismo trabajador no puede estar en dos citas distintas a la misma hora
                 penalizacion_5 += self.contador_trabajador(hora, citas.personal.id)
 
+            # Funcion Objetivo 3
+            self.insertar_horas(citas.start_time, citas.end_time, horario_local)
+
+
 
         # Restriccion 6: Una fase anterior en el orden no puede ir después ni a la misma hora que otra que va más
         # tarde en el orden. Por ejemplo: 1ºPC y 2ºR (incorrecto)
@@ -172,8 +176,6 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
 
         # Funcion Objetivo 3: Minimizar slots ocupados (paralelizar las citas)
         funcion_objetivo_3 = 0
-        for citas in X.values():
-            self.insertar_horas(citas.start_time, citas.end_time, horario_local)
 
 
         for slot in horario_local:
@@ -184,9 +186,41 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
         # Funcion Objetivo 4: Minimizar las consultas vacias:
         funcion_objetivo_4 = self.consultas_ocupadas(X)
 
+        funcion_objetivo_5 = self.personal_ocupado(X)
 
-        out["F"] = [funcion_objetivo_1, funcion_objetivo_2, funcion_objetivo_3, funcion_objetivo_4]
+
+        out["F"] = [funcion_objetivo_1, funcion_objetivo_2, funcion_objetivo_3, funcion_objetivo_4, funcion_objetivo_5]
         out["G"] = [penalizacion_1, penalizacion_2, penalizacion_3, penalizacion_4, penalizacion_5, penalizacion_6]
+
+
+    def personal_ocupado(self, citas):
+        citas_rol = 0
+        for rol in self.roles:
+            citas_trabajador = []
+            for personal in self.personal:
+                if personal.role == rol:
+                    citas_trabajador.append(0)
+                    for cita in citas.values():
+                        if cita.personal.id == personal.id:
+                            citas_trabajador[len(citas_trabajador) - 1] += 1
+
+                    for cita_ocupada in slots_ocupados:
+                        if cita_ocupada.personal.id == personal.id and cita_ocupada.day == self.dia_actual:
+                            citas_trabajador[len(citas_trabajador) - 1] += 1
+
+            contador_citas = sum(citas_trabajador)
+            average = contador_citas / len(citas_trabajador)
+            modulo = contador_citas % len(citas_trabajador)
+            if modulo != 0:
+                average = int(average) + 1
+            maximum_weight = max(citas_trabajador)
+            minimum_weight = min(citas_trabajador)
+
+            citas_rol += max(maximum_weight - average, average - minimum_weight)
+
+        return citas_rol
+
+
 
     def consultas_ocupadas(self, citas):
         contador_citas = 0
@@ -198,9 +232,9 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
                 if cita.operation_room == consulta + 1:
                     citas_consulta[consulta] += 1
             for citas_pasadas in slots_ocupados:
-                if citas_pasadas.day == self.dia_actual:
-                    if citas_pasadas.operation_room == consulta + 1:
-                        citas_consulta[consulta] += 1
+                if citas_pasadas.day == self.dia_actual and citas_pasadas.operation_room == consulta + 1:
+                    citas_consulta[consulta] += 1
+
         contador_citas += sum(citas_consulta)
         average = contador_citas / len(citas_consulta)
         modulo = contador_citas % len(citas_consulta)
@@ -212,9 +246,6 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
 
         difference = max(maximum_weight - average, average - minimum_weight)
         return difference
-
-
-
 
     def insertar_horas(self, hora_inicio, hora_fin, horario_local):
 
@@ -254,11 +285,12 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
         return penalizacion_2
 
     def contador_trabajador(self, hora, id):
-        penalizacion = 3
+        penalizacion = 0
         for cita in slots_ocupados:
             if cita.day == self.dia_actual and cita.personal.id == id and (cita.start_time <= hora and hora <= cita.end_time):
                 penalizacion += 100
                 break
+        return penalizacion
 
 
     def check_slot(self, cita):

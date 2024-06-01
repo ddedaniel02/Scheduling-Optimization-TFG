@@ -2,7 +2,7 @@ from pymoo.operators.mutation.pm import PolynomialMutation
 from pymoo.optimize import minimize
 from pymoo.algorithms.moo.nsga2 import NSGA2
 from pymoo.core.mixed import MixedVariableMating, MixedVariableSampling, MixedVariableDuplicateElimination
-from mensual_visitas import MultiObjectiveMixedVariableProblem, slots_ocupados, horarios_dias
+from mensual_visitas import *
 import numpy as np
 from representacion_sols_visitas import plot_schedule
 import json
@@ -16,6 +16,7 @@ inicio_tiempo = time.time()
 lista_sols = []
 consultas_usadas = []
 citas_totales = []
+trabajadores_usados = []
 
 ##SETUP##
 with open("Programacion_de_Citas_Pacientes/input_visitas.json", "r") as file:
@@ -28,8 +29,18 @@ limpiar_base_datos()
 for dias in range(myinput["n_dias"]):
     horarios_dias.append(set())
     consultas_usadas.append([])
+    trabajadores_usados.append({})
+    identificador_trabajador = 1
     for consultorios in range(myinput["n_consultorios"]):
         consultas_usadas[dias].append(0)
+    for rol in myinput["roles"]:
+        for identificador in range(1, myinput["personal"][rol] + 1):
+            trabajadores_usados[dias][rol+str(identificador_trabajador)] = 0
+            identificador_trabajador += 1
+
+
+
+
 
 
 pacientes_dict = myinput["n_personas"]
@@ -57,7 +68,7 @@ for estudio in pacientes_dict:
                               eliminate_duplicates=MixedVariableDuplicateElimination(),
                               )
 
-            termination = ('n_gen', 200)
+            termination = ('n_gen', 150)
 
             res = minimize(problem,
                            algorithm,
@@ -76,7 +87,7 @@ for estudio in pacientes_dict:
 
             nF = (F - approx_ideal) / (approx_nadir - approx_ideal)
 
-            weights = np.array([0.3, 0.4, 0.20, 0.1])
+            weights = np.array([0.3, 0.3, 0.20, 0.1, 0.1])
 
             from pymoo.decomposition.asf import ASF
 
@@ -97,15 +108,17 @@ for estudio in pacientes_dict:
                     dia = citas.day
                     lista_dias.append(citas.day)
                     insert_uno = False
+
                 problem.insertar_horas(citas.start_time, citas.end_time, horarios_dias[dia - 1])
                 slots_ocupados.append(citas)
                 consultas_usadas[dia - 1][citas.operation_room - 1] += 1
+                trabajadores_usados[dia - 1][citas.personal.id] += 1
             citas_totales.append(X[i])
         plot_schedule(citas_paciente, estudio, identificador_pacientes)
         escribir_resultados_paciente(objetivos_paciente, identificador_pacientes)
         identificador_pacientes += 1
 
-escribir_estadisticas_dia(myinput, citas_totales, consultas_usadas, horarios_dias)
+escribir_estadisticas_dia(myinput, citas_totales, consultas_usadas, trabajadores_usados, horarios_dias)
 
 
 fin_tiempo = time.time()

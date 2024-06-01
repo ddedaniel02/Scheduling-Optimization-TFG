@@ -131,7 +131,7 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
                 # Restriccion 5: Un mismo trabajador no puede estar en dos citas distintas a la misma hora
                 penalizacion_5 += self.contador_trabajador(hora, citas.personal.id)
 
-            # Funcion Objetivo 3
+            # Funcion Objetivo 3 (preparacion de la lista de horas)
             self.insertar_horas(citas.start_time, citas.end_time, horario_local)
 
 
@@ -176,16 +176,16 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
 
         # Funcion Objetivo 3: Minimizar slots ocupados (paralelizar las citas)
         funcion_objetivo_3 = 0
-
-
         for slot in horario_local:
             if slot not in horarios_dias[self.dia_actual - 1]:
                 funcion_objetivo_3 += 1
 
         funcion_objetivo_3 += len(horarios_dias[self.dia_actual - 1])
+
         # Funcion Objetivo 4: Minimizar las consultas vacias:
         funcion_objetivo_4 = self.consultas_ocupadas(X)
 
+        # Funcion Objetivo 5: Minimizar los trabajadores no ocupados:
         funcion_objetivo_5 = self.personal_ocupado(X)
 
 

@@ -11,7 +11,7 @@ def limpiar_base_datos():
         if os.path.isfile(ruta_completa):
             os.remove(ruta_completa)
 
-    ruta_carpeta_plots = "./resultados_citas_agenda_paciente"
+    ruta_carpeta_plots = "./resultados_citas_paciente_graficos"
     archivos = os.listdir(ruta_carpeta_plots)
 
     for archivo in archivos:

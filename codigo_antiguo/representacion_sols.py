@@ -45,10 +45,10 @@ def plot_schedule(schedule, estudio, paciente):
     plt.legend(loc='upper left', fontsize='small', bbox_to_anchor=(1, 1))
     plt.tight_layout()
     # Crear la carpeta si no existe
-    if not os.path.exists('../resultados_citas_agenda_paciente'):
-        os.makedirs('../resultados_citas_agenda_paciente')
+    if not os.path.exists('../resultados_citas_paciente_graficos'):
+        os.makedirs('../resultados_citas_paciente_graficos')
 
     # Guardar la figura en la carpeta deseada
-    plt.savefig(f'./resultados_citas_agenda_paciente/{estudio}_{paciente}_plot.png')
+    plt.savefig(f'./resultados_citas_paciente_graficos/{estudio}_{paciente}_plot.png')
     #plt.show()
 

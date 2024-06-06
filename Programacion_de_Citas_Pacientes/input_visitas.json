@@ -67,7 +67,7 @@
     "personal": {
       "MG": 5,
       "LB": 4,
-      "AC": 4
+      "AC": 5
     },
     "cargos": {
       "AC": ["lectura_presentacion_icfs", "cierre_visita"],

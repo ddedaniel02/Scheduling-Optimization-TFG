@@ -63,25 +63,3 @@ class Fase():
     def __hash__(self):
         return hash((self.estudio, self.fase, self.paciente))
 
-
-def consistencia_horas(tipo_cita, hora_inicio, dia):
-    if dia == 1:
-        if tipo_cita == 'PC' and hora_inicio < 14\
-            or tipo_cita == 'OB' and hora_inicio < 13\
-            or tipo_cita == 'VC' and hora_inicio < 12\
-            or tipo_cita == 'LB' and hora_inicio < 11\
-            or tipo_cita == 'CM' and hora_inicio < 10\
-            or tipo_cita == 'ME' and hora_inicio < 9\
-            or tipo_cita == 'CS' and hora_inicio < 8:
-            return False
-    elif dia == 7:
-        if tipo_cita == 'RC' and hora_inicio > 14\
-            or tipo_cita == 'OB' and hora_inicio > 20\
-            or tipo_cita == 'VC' and hora_inicio > 19\
-            or tipo_cita == 'LB' and hora_inicio > 18\
-            or tipo_cita == 'CM' and hora_inicio > 17\
-            or tipo_cita == 'ME' and hora_inicio > 16\
-            or tipo_cita == 'CS' and hora_inicio > 15:
-            return False
-    return True
-

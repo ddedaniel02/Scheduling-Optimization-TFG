@@ -1,0 +1,10 @@
+{
+    "pop_size": 100,
+    "mutation_percentage": 0.1,
+    "n_gens": 150,
+    "weight_f1": 0.3,
+    "weight_f2": 0.35,
+    "weight_f3": 0.15,
+    "weight_f4": 0.1,
+    "weight_f5": 0.1
+}

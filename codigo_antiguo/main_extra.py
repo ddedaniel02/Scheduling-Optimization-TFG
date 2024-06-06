@@ -32,8 +32,8 @@ for estudio in pacientes_dict:
                           eliminate_duplicates=MixedVariableDuplicateElimination(),
                           )
 
-        termination = RobustTermination(
-            MultiObjectiveSpaceTermination(tol=0.005, n_skip=100), period=20)
+        termination = ('n_gen', 150)
+
 
         res = minimize(problem,
                        algorithm,

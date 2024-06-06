@@ -60,8 +60,7 @@ def escribir_estadisticas_dia(myinput, citas_totales, consulta_usadas, trabajado
                                f"\tPaciente: {cita_paciente[0].paciente}\n")
 
                 file.write(f"\nCitas en cada consulta: {consulta_usadas[day - 1]}\n"
-                            f"Porcentaje de ocupacion: {porcentaje_ocupacion}\n"
-                            f"Slots Ocupados: {sorted_list}\n")
+                            f"Porcentaje de ocupacion: {porcentaje_ocupacion}\n")
                 file.write(f"Citas por trabajador: \n")
                 for claves in trabajadores_usados[day - 1]:
                     value = trabajadores_usados[day - 1][claves]

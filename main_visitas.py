@@ -9,7 +9,7 @@ import json
 import random
 from crear_estadisticas import *
 import time
-
+from input_validator import *
 
 inicio_tiempo = time.time()
 
@@ -23,8 +23,21 @@ with open("Programacion_de_Citas_Pacientes/input_visitas.json", "r") as file:
     myinput = json.load(file)
 
 
+POP_SIZE = load_number("pop_size")
+N_GENS = load_number("n_gens")
+MUTATION_PERCENTAGE = load_percentage("mutation_percentage")
+WEIGHT_F1 = load_percentage("weight_f1")
+WEIGHT_F2 = load_percentage("weight_f2")
+WEIGHT_F3 = load_percentage("weight_f3")
+WEIGHT_F4 = load_percentage("weight_f4")
+WEIGHT_F5 = load_percentage("weight_f5")
+
+TOTAL_WEIGHT = round(WEIGHT_F1 + WEIGHT_F2 + WEIGHT_F3 + WEIGHT_F4 + WEIGHT_F5, 2)
+correct_percentage(TOTAL_WEIGHT, "total_weight")
+
 limpiar_base_datos()
 
+validar_parametros(myinput)
 
 for dias in range(myinput["n_dias"]):
     horarios_dias.append(set())
@@ -61,14 +74,14 @@ for estudio in pacientes_dict:
             print("Visita: ",visita)
             problem = MultiObjectiveMixedVariableProblem(estudio, visita, identificador_pacientes, myinput, enrolamiento
                                                          , tiempo_espera, lista_dias)
-            algorithm = NSGA2(pop_size=100,
+            algorithm = NSGA2(pop_size=POP_SIZE,
                               sampling=MixedVariableSampling(),
                               mating=MixedVariableMating(eliminate_duplicates=MixedVariableDuplicateElimination()),
-                              mutation=PolynomialMutation(prob=0.1),
+                              mutation=PolynomialMutation(prob=MUTATION_PERCENTAGE),
                               eliminate_duplicates=MixedVariableDuplicateElimination(),
                               )
 
-            termination = ('n_gen', 150)
+            termination = ('n_gen', N_GENS)
 
             res = minimize(problem,
                            algorithm,
@@ -87,7 +100,7 @@ for estudio in pacientes_dict:
 
             nF = (F - approx_ideal) / (approx_nadir - approx_ideal)
 
-            weights = np.array([0.3, 0.3, 0.20, 0.1, 0.1])
+            weights = np.array([WEIGHT_F1, WEIGHT_F2, WEIGHT_F3, WEIGHT_F4, WEIGHT_F5])
 
             from pymoo.decomposition.asf import ASF
 

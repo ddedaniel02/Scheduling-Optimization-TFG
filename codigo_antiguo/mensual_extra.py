@@ -41,12 +41,9 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
             for i in range(self.recursos[rol]):
                 if i % 2 == 0:
                     self.personal.append(Personal(rol + str(identificador_personal), rol, "Mañana"))
-                    print('Mañana: ', rol + str(identificador_personal))
                 else:
                     self.personal.append(Personal(rol + str(identificador_personal), rol, "Tarde"))
-                    print('Tarde: ', rol + str(identificador_personal))
                 identificador_personal += 1
-        #print(self.personal)
         """Sección implementación de Variables"""
 
         vars = dict()
@@ -57,13 +54,18 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
                 for personal in self.personal:
                     for start_time in self.horas:
                         for end_time in self.horas:
+                            # Si la duración no es la correspondiente, se descarta la combinación
                             if (int(end_time) - int(start_time)) == int(max(self.duracion_actividad.values())):
+                                # Si es de turno mañana pero la cita es por la tarde se descarta
                                 if personal.turno == "Mañana" and start_time < 15:
                                     cita = Cita(consultorio, start_time, end_time, dia, personal)
+                                    # Si esa combinación está ocupada se descarta
                                     if not self.check_slot(cita):
                                         self.combinations.append(cita)
+                                # Si es turno de tarde pero la cita es de mañana se descarta
                                 elif personal.turno == "Tarde" and start_time >= 15:
                                     cita = Cita(consultorio, start_time, end_time, dia, personal)
+                                    # Si esa combinación está ocupada se descarta
                                     if not self.check_slot(cita):
                                         self.combinations.append(cita)
 
@@ -75,14 +77,13 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
                 if actividad.fase in self.cargo_actividad[opcion.personal.role]:
                     opciones.append(opcion)
             vars[actividad] = Choice(options=opciones)
-        super().__init__(vars=vars, n_obj=2, n_constr = 4, **kwargs)
+        super().__init__(vars=vars, n_obj=2, n_constr = 3, **kwargs)
 
     def _evaluate(self, X, out, *args, **kwargs):
         # X = Fase:Cita
         penalizacion_1 = 0
         penalizacion_2 = 0
         penalizacion_3 = 0
-        penalizacion_4 = 0
 
         for day in range(1, self.dias +1):
             # Restriccion 1: Una sala no puede contener dos citas al mismo tiempo:
@@ -96,24 +97,16 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
                         penalizacion_1 += 100
                     start_time = cita_time
 
-            # Restriccion 2: No se pueden asignar más personal del disponible en una misma hora
             for start_time in self.horas:
                 # Lista que contiene todas las citas de un respectivo día y de una hora
                 lista_time_day = [cita for cita in X.values() if cita.day == day and cita.start_time == start_time]
-                lista_contador = []
-                for i in range(len(self.roles)): # No se cuantos roles hay GENERICO
-                    lista_contador.append(0)
-                #Funcion que cuenta cuantos roles hay asignado a dichar hora
-                penalizacion_2 += self.contador_personal(lista_contador, lista_time_day)
-                penalizacion_2 += self.contador_personal_asignado(day, start_time, lista_contador)
-
-                # Restriccion 3: Un mismo trabajador no puede estar en dos citas distintas a la misma hora
+                # Restriccion 2: Un mismo trabajador no puede estar en dos citas distintas a la misma hora
                 for personal in lista_time_day:
                     citas = [cita for cita in X.values() if cita.personal.id == personal.personal.id and cita.start_time == start_time and cita.day == day]
                     if len(citas) > 1:
-                        penalizacion_3 += 100
+                        penalizacion_2 += 100
 
-        # Restriccion 4: Una fase anterior en el orden no puede ir después ni a la misma hora que otra que va más
+        # Restriccion 3: Una fase anterior en el orden no puede ir después ni a la misma hora que otra que va más
         # tarde en el orden. Por ejemplo: 1ºPC y 2ºR (incorrecto)
         evaluados = set()
         for cita_i in X:
@@ -126,7 +119,7 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
                     continue
                 hora_inicio_j = int(X[cita_j].start_time) + 24 * int(X[cita_j].day)
                 if self.fases.index(cita_i.fase) == self.fases.index(cita_j.fase) - 1 and hora_inicio_i >= hora_inicio_j:
-                    penalizacion_4 += 100
+                    penalizacion_3 += 100
 
 
 
@@ -170,7 +163,7 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
 
 
         out["F"] = [funcion_objetivo_1, funcion_objetivo_2]
-        out["G"] = [penalizacion_1, penalizacion_2, penalizacion_3, penalizacion_4]
+        out["G"] = [penalizacion_1, penalizacion_2, penalizacion_3]
 
     def contador_personal(self, lista_contador, lista_time_day):
         penalizacion_2 = 0

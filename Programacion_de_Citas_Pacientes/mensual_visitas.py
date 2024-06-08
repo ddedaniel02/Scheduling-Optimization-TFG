@@ -1,8 +1,6 @@
 from pymoo.core.problem import ElementwiseProblem
 from pymoo.core.variable import Choice
 from objetos_variables_visitas import Cita, Fase, Personal
-import numpy as np
-import random
 
 slots_ocupados = []
 lista_contador = [0, 0, 0, 0]
@@ -83,7 +81,7 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
                     if actividad.fase in self.cargo_actividad[opcion.personal.role]:
                         opciones.append(opcion)
             vars[actividad] = Choice(options=opciones)
-        super().__init__(vars=vars, n_obj=5, n_constr=6, **kwargs)
+        super().__init__(vars=vars, n_obj=5, n_constr=5, **kwargs)
 
 
     def _evaluate(self, X, out, *args, **kwargs):
@@ -94,16 +92,14 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
         penalizacion_3 = 0
         penalizacion_4 = 0
         penalizacion_5 = 0
-        penalizacion_6 = 0
 
         # Restriccion 1: Las fases deben estar asignadas al mismo día:
         if self.enrolamiento:
-            dia_primero = 1
             primero = True
             for citas in X.values():
                 dia_actual = citas.day
                 if primero:
-                    self.dia_actual = dia_primero
+                    self.dia_actual = dia_actual
                     dia_primero = dia_actual
                     primero = False
                 else:
@@ -114,29 +110,22 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
                 penalizacion_2 += 1000
 
 
-        # Restriccion 3: Una sala no puede contener dos citas al mismo tiempo:
         for citas in X.values():
-            horas_ocupadas_consulta = set()
-            for citas_ocupadas in slots_ocupados:
-                if citas_ocupadas.operation_room == citas.operation_room and citas_ocupadas.day == self.dia_actual:
-                    self.insertar_horas(citas_ocupadas.start_time, citas_ocupadas.end_time, horas_ocupadas_consulta)
-            penalizacion_3 += self.contador_citas_consulta(citas.start_time, citas.end_time, horas_ocupadas_consulta)
+            horas_ocupadas = set()
+            self.insertar_horas(citas.start_time, citas.end_time, horas_ocupadas)
+            for hora in horas_ocupadas:
+                # Restricción 3: Una consulta no puede tener dos citas a la vez
+                penalizacion_3 += self.contador_citas_consulta(hora, citas.operation_room)
 
-            franja_horas_recurso = set()
-            self.insertar_horas(citas.start_time, citas.end_time, franja_horas_recurso)
-            for hora in franja_horas_recurso:
-                # Restriccion 4: No se pueden asignar más personal del disponible en una misma hora
-                penalizacion_4 += self.contador_recursos_personal(hora, citas.personal.role)
-
-                # Restriccion 5: Un mismo trabajador no puede estar en dos citas distintas a la misma hora
-                penalizacion_5 += self.contador_trabajador(hora, citas.personal.id)
+                # Restriccion 4: Un mismo trabajador no puede estar en dos citas distintas a la misma hora
+                penalizacion_4 += self.contador_trabajador(hora, citas.personal.id)
 
             # Funcion Objetivo 3 (preparacion de la lista de horas)
             self.insertar_horas(citas.start_time, citas.end_time, horario_local)
 
 
 
-        # Restriccion 6: Una fase anterior en el orden no puede ir después ni a la misma hora que otra que va más
+        # Restriccion 5: Una fase anterior en el orden no puede ir después ni a la misma hora que otra que va más
         # tarde en el orden. Por ejemplo: 1ºPC y 2ºR (incorrecto)
         evaluados = set()
         for cita_i in X:
@@ -150,7 +139,7 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
                 hora_inicio_j = X[cita_j].start_time
                 if self.fases.index(cita_i.fase) == self.fases.index(cita_j.fase) - 1 and \
                     hora_inicio_j < hora_fin_i:
-                    penalizacion_6 += 100
+                    penalizacion_5 += 100
 
 
 
@@ -190,7 +179,7 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
 
 
         out["F"] = [funcion_objetivo_1, funcion_objetivo_2, funcion_objetivo_3, funcion_objetivo_4, funcion_objetivo_5]
-        out["G"] = [penalizacion_1, penalizacion_2, penalizacion_3, penalizacion_4, penalizacion_5, penalizacion_6]
+        out["G"] = [penalizacion_1, penalizacion_2, penalizacion_3, penalizacion_4, penalizacion_5]
 
 
     def personal_ocupado(self, citas):
@@ -223,7 +212,6 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
 
 
     def consultas_ocupadas(self, citas):
-        contador_citas = 0
         citas_consulta = []
 
         for consulta in range(0, self.consultorios):
@@ -235,7 +223,7 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
                 if citas_pasadas.day == self.dia_actual and citas_pasadas.operation_room == consulta + 1:
                     citas_consulta[consulta] += 1
 
-        contador_citas += sum(citas_consulta)
+        contador_citas = sum(citas_consulta)
         average = contador_citas / len(citas_consulta)
         modulo = contador_citas % len(citas_consulta)
         if modulo != 0:
@@ -259,30 +247,13 @@ class MultiObjectiveMixedVariableProblem(ElementwiseProblem):
                 hora_inicio = int(hora_inicio) + 1
         horario_local.add(hora_inicio)
 
-    def contador_citas_consulta(self, hora_inicio, hora_fin, lista_horas):
+    def contador_citas_consulta(self, hora, consulta):
         penalizacion = 0
-        while hora_inicio < hora_fin:
-            if hora_inicio in lista_horas:
-                penalizacion += 100
-            hora_inicio = round(hora_inicio + 0.1, 2)
-            hora_entera = int(hora_inicio)
-            parte_float = round(hora_inicio - hora_entera, 2)
-
-            if parte_float == 0.6:
-                hora_inicio = int(hora_inicio) + 1
-        if hora_inicio in lista_horas:
-            penalizacion += 100
-        return penalizacion
-
-    def contador_recursos_personal(self, hora, rol):
-        contador = 1
-        penalizacion_2 = 0
         for cita in slots_ocupados:
-            if cita.day == self.dia_actual and cita.personal.role == rol and (cita.start_time <= hora and hora <= cita.end_time):
-                contador += 1
-                if contador > self.recursos[rol]:
-                    penalizacion_2 += 100
-        return penalizacion_2
+            if cita.day == self.dia_actual and cita.operation_room == consulta and (cita.start_time <= hora and hora <= cita.end_time):
+                penalizacion += 100
+                break
+        return penalizacion
 
     def contador_trabajador(self, hora, id):
         penalizacion = 0

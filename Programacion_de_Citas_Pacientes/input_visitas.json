@@ -3,7 +3,7 @@
       "COVID": 5,
       "GRIPE": 5
     },
-    "n_consultorios": 5,
+    "n_consultorios": 4,
 
     "COVID": {
       "visita_enrolamiento": {
@@ -65,9 +65,9 @@
   },
     "roles": ["MG", "LB", "AC"],
     "personal": {
-      "MG": 5,
-      "LB": 4,
-      "AC": 5
+      "MG": 3,
+      "LB": 2,
+      "AC": 3
     },
     "cargos": {
       "AC": ["lectura_presentacion_icfs", "cierre_visita"],
